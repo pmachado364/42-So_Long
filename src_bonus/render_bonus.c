@@ -1,0 +1,79 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   render_bonus.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pmachado <pmachado@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/10/13 11:06:43 by pmachado          #+#    #+#             */
+/*   Updated: 2024/10/18 19:31:36 by pmachado         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../include/so_long_bonus.h"
+
+void	render_game_window(t_game *g);
+void	render_world_map(t_game *g);
+
+void	render(t_game *g)
+{
+	render_game_window(g);
+	if (!g->view_portal)
+		ft_end(5, g);
+	render_world_map(g);
+	mlx_hook(g->view_portal, KeyPress, KeyPressMask, &keys_actions, g);
+	mlx_hook(g->view_portal, DestroyNotify, StructureNotifyMask, &ft_exit,
+		g);
+	mlx_loop(g->pixel_magic);
+}
+
+void	render_game_window(t_game *g)
+{
+	if (g->pixel_magic == NULL)
+		ft_end(5, g);
+	g->view_portal = mlx_new_window(g->pixel_magic,
+			(g->world_map->map_size.x * 64),
+			(g->world_map->map_size.y * 64), "so_long");
+	if (g->view_portal == NULL)
+		ft_end(5, g);
+	g->art_asset.canvas = mlx_new_image(g->pixel_magic,
+			g->world_map->map_size.x * 64,
+			g->world_map->map_size.y * 64);
+	g->art_asset.data_stream = mlx_get_data_addr(g->art_asset.canvas,
+			&g->art_asset.pixel_intensity, &g->art_asset.row_length,
+			&g->art_asset.byte_order);
+}
+
+void	render_world_map(t_game *g)
+{
+	g->render_pos.y = -1;
+	while (++g->render_pos.y < g->world_map->map_size.y)
+	{
+		g->render_pos.x = -1;
+		while (++g->render_pos.x < g->world_map->map_size.x)
+		{
+			render_corners(g, g->render_pos.x, g->render_pos.y);
+			render_borders(g, g->render_pos.x, g->render_pos.y);
+			render_tiles(g, g->render_pos.x, g->render_pos.y);
+			render_footstep_count(g);
+		}
+	}
+}
+
+void	render_footstep_count(t_game *g)
+{
+	char	*footsteps;
+	int		x;
+	int		y;
+
+	x = (g->world_map->map_size.x / 2) * 64 + 50;
+	y = g->world_map->map_size.y * 64 - 10;
+	footsteps = ft_itoa(g->footsteps);
+	put_tile(g, "./textures/Floor/WATER.xpm", x, y - 20);
+	put_tile(g, "./textures/Floor/WATER.xpm", x + 64, y - 20);
+	mlx_string_put(g->pixel_magic, g->view_portal,
+		x, y, 0xCC0000, "Footsteps:");
+	mlx_string_put(g->pixel_magic, g->view_portal,
+		x + 65, y, 0xCC0000, footsteps);
+	free(footsteps);
+}
